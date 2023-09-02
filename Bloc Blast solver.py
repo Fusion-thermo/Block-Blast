@@ -89,7 +89,7 @@ def creer_formes(grille):
                     for carre in frontiere:
                         for c_poss in carres_possibles:
                             dl,dc=c_poss[0],c_poss[1]
-                            if carre.l+dl<grille.shape[0] and carre.c+dc<grille.shape[1] and carre.l+dl>=0 and carre.c+dc>=0 and (grille[carre.l + dl,carre.c + dc] == 1).all():
+                            if carre.l+dl<grille.shape[0] and carre.c+dc<grille.shape[1] and carre.l+dl>=0 and carre.c+dc>=0 and (grille[carre.l + dl,carre.c + dc] == 1):
                                 grille[carre.l+dl,carre.c+dc] = 0
                                 forme.carres.append(Carre(carre.l+dl,carre.c+dc))
                                 nouveau.append(Carre(carre.l+dl,carre.c+dc))
@@ -100,10 +100,6 @@ def creer_formes(grille):
 
 
 def positionner(plateau,formes):
-    #le score d'un ordre de formes augmente avec le nombre de l ou c supprimés (donc remplis)
-    #actuellement on cherche la position avec le plus de voisins puis on regarde si des l ou c sont pleins
-    #on pourrait aussi choisir la position d'une forme selon si elle remplit ou non une l ou c
-    #mais aussi selon les trous créés
     plateau_original=np.copy(plateau)
     tours=[]
     for ordre in permutations(range(3)):
@@ -112,6 +108,7 @@ def positionner(plateau,formes):
         score_ordre=0
         #plateau=np.copy(plateau_original)
         plateau_ordre=np.copy(plateau_original)
+        possible=True
         for numero in ordre:
             forme=formes[numero]
             scores=[]
@@ -137,25 +134,44 @@ def positionner(plateau,formes):
                     for carre in forme.carres:
                         plateau_test_de_case[l+carre.l,c+carre.c] = 1
                     #supprime les colonnes pleines
+                    bonus=50
                     for col in range(plateau.shape[1]):
                         if sum(plateau_test_de_case[line,col] for line in range(plateau.shape[0])) == plateau.shape[0]:
                             print("colonne pleine")
-                            score+=20
+                            score+=bonus
                             for line in range(plateau.shape[0]):
                                 plateau_test_de_case[line,col]=0
                     #supprime les lignes pleines
                     for line in range(plateau.shape[0]):
                         if sum(plateau_test_de_case[line,col] for col in range(plateau.shape[1])) == plateau.shape[1]:
                             print("ligne pleine")
-                            score+=20
+                            score+=bonus
                             for col in range(plateau.shape[1]):
                                 plateau_test_de_case[line,col]=0
-            
+                    #favorise le remplissage de l et c
+                    coeff=2
+                    for col in range(plateau.shape[1]):
+                        score+=sum(plateau[line,col] for line in range(plateau.shape[0])) * coeff
+                    for line in range(plateau.shape[0]):
+                        score+=sum(plateau[line,col] for col in range(plateau.shape[1])) * coeff
+                    #pénaliser la création de 0 avec 4 voisins
+                    coeff=6
+                    carres_possibles=[(-1,0),(0,1),(1,0),(0,-1)]
+                    for line in range(plateau.shape[0]):
+                        for col in range(plateau.shape[1]):
+                            if plateau_test_de_case[line,col]==0:
+                                voisins=0
+                                for carre in carres_possibles:
+                                    if carre[0]+line>=plateau.shape[0] or carre[1]+col>=plateau.shape[1] or carre[0]+line<0 or carre[1]+col<0 or (plateau_test_de_case[carre[0]+line,carre[1]+col] == 1):
+                                        voisins+=1
+                                if voisins>3:
+                                    score-=voisins*coeff
+
                     scores.append(Carre(l,c,score,plateau_test_de_case))
             if len(scores)==0:
                 #pas possible de placer ce bloc
                 print("impossible")
-                score_ordre=-1
+                possible=False
                 break
             #choisit la meilleure position
             scores.sort(key=trier_positions,reverse=True)
@@ -165,7 +181,7 @@ def positionner(plateau,formes):
             plateau_ordre=np.copy(best.plateau)
             score_ordre+=best.score
         #print(plateau)
-        if score_ordre >= 0:
+        if possible:
             tour_actuel.score=score_ordre
             tour_actuel.plateau=plateau_ordre
             tours.append(tour_actuel)
@@ -238,10 +254,11 @@ while not fini:
         i.affichage()
     tour=positionner(plateau,formes)
     if isinstance(tour,str):
+        print('Aucune solution possible')
         fini=True
     else:
         print("ordre choisi",tour.ordre)
         plateau=np.copy(tour.plateau)
-        print("plateau",plateau)
+        print("plateau\n",plateau)
         bouger_formes(tour,formes)
         sleep(2)
