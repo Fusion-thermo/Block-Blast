@@ -9,10 +9,11 @@ def bonne_couleur(mesure, reference, ecart_admissible):
 
 
 class Carre():
-    def __init__(self,l,c,score=0):
+    def __init__(self,l,c,score=0,plateau=None):
         self.l=l
         self.c=c
         self.score=score
+        self.plateau=plateau
 
 class Forme:
     def __init__(self,carres):
@@ -71,10 +72,14 @@ class Forme:
             if (carre.l,carre.c-1) not in coos:
                 self.bords.append(Carre(carre.l,carre.c-1))
                 coos.append((carre.l,carre.c-1))
+        self.carres.sort(key=trier_carres)
+        self.bords.sort(key=trier_carres)
     def affichage(self):
         print("Carres",[(carre.l,carre.c) for carre in self.carres])
         print("bords",[(carre.l,carre.c) for carre in self.bords])
 
+def trier_carres(carre):
+    return (carre.l,carre.c)
 def trier_positions(carre):
     return carre.score
 def trier_score_positions(score):
@@ -85,6 +90,6 @@ def trier_tours(tour):
 class Tour_de_jeu():
     def __init__(self,ordre):
         self.ordre=ordre
-        self.positions=[]
+        self.positions=[0,0,0]
         self.score=0
         self.plateau=np.zeros((8,8))
