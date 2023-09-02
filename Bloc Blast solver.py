@@ -7,8 +7,27 @@ from Classes import *
 
 mouse = Controller()
 
+def lecture_plateau():
+    x_min=1015
+    y_min=434
+    x_max=1722
+    y_max=1142
+    im = ImageGrab.grab(bbox =(x_min,y_min,x_max,y_max))
+    #im.show()
+    px=im.load()
+    decalage=89
+    l0=45
+    c0=45
+    ref_fond=(35,45,85)
+    plateau=np.zeros((8,8))
+    for l in range(8):
+        for c in range(8):
+        #print("x",x, x*decalage+x0+x_min)
+            if not bonne_couleur(px[l*decalage + l0,c*decalage+c0],ref_fond,0.1):
+                plateau[c,l]=1
+    return plateau
 
-def lecture():
+def lecture_grille():
     x_min=1025
     y_min=1240
     x_max=1710
@@ -40,7 +59,7 @@ def lecture():
     return grille
 
 # sleep(1)
-# grille=lecture()
+# grille=lecture_grille()
 # print(grille)
 # mouse.position = (10,10)
 
@@ -91,7 +110,7 @@ def positionner(plateau,formes):
         tour_actuel=Tour_de_jeu(ordre)
         print(ordre)
         score_ordre=0
-        plateau=np.copy(plateau_original)
+        #plateau=np.copy(plateau_original)
         plateau_ordre=np.copy(plateau_original)
         for numero in ordre:
             forme=formes[numero]
@@ -104,7 +123,6 @@ def positionner(plateau,formes):
                     for carre in forme.carres:
                         if plateau_test_de_case[l+carre.l,c+carre.c] == 1:
                             continuer=True
-                            print("place prise")
                             break
                     if continuer:
                         continue
@@ -119,19 +137,19 @@ def positionner(plateau,formes):
                     for carre in forme.carres:
                         plateau_test_de_case[l+carre.l,c+carre.c] = 1
                     #supprime les colonnes pleines
-                    for c in range(plateau.shape[1]):
-                        if sum(plateau_test_de_case[l,c] for l in range(plateau.shape[0])) == plateau.shape[0]:
+                    for col in range(plateau.shape[1]):
+                        if sum(plateau_test_de_case[line,col] for line in range(plateau.shape[0])) == plateau.shape[0]:
                             print("colonne pleine")
                             score+=20
-                            for l in range(plateau.shape[0]):
-                                plateau_test_de_case[l,c]=0
+                            for line in range(plateau.shape[0]):
+                                plateau_test_de_case[line,col]=0
                     #supprime les lignes pleines
-                    for l in range(plateau.shape[0]):
-                        if sum(plateau_test_de_case[l,c] for c in range(plateau.shape[1])) == plateau.shape[1]:
+                    for line in range(plateau.shape[0]):
+                        if sum(plateau_test_de_case[line,col] for col in range(plateau.shape[1])) == plateau.shape[1]:
                             print("ligne pleine")
                             score+=20
-                            for c in range(plateau.shape[1]):
-                                plateau_test_de_case[l,c]=0
+                            for col in range(plateau.shape[1]):
+                                plateau_test_de_case[line,col]=0
             
                     scores.append(Carre(l,c,score,plateau_test_de_case))
             if len(scores)==0:
@@ -145,10 +163,11 @@ def positionner(plateau,formes):
             print(best.score)
             tour_actuel.positions[numero] = best
             plateau_ordre=np.copy(best.plateau)
+            score_ordre+=best.score
         #print(plateau)
         if score_ordre >= 0:
             tour_actuel.score=score_ordre
-            tour_actuel.plateau=plateau
+            tour_actuel.plateau=plateau_ordre
             tours.append(tour_actuel)
     #sélectionne le plateau avec le meilleur score
     tours.sort(reverse=True,key=trier_tours)
@@ -165,7 +184,7 @@ def bouger_formes(tour,formes):
     ecart_vertical=210
     for numero in tour.ordre:
         forme=formes[numero]
-        forme.relache_x = (x0 + tour.positions[numero].c * decalage) + forme.largeur*decalage//2 + 30
+        forme.relache_x = (x0 + tour.positions[numero].c * decalage) + forme.largeur*decalage//2 + 35
         forme.relache_y = (y0 + tour.positions[numero].l * decalage) + forme.hauteur*decalage//2 + ecart_vertical +10
         mouse.position = (forme.x_clic,forme.y_clic)
         sleep(0.3)
@@ -175,7 +194,7 @@ def bouger_formes(tour,formes):
         #mouse.move(forme.relache_x - forme.x_clic,forme.relache_y - forme.y_clic)
         a=(forme.relache_y - forme.y_clic) / (forme.relache_x - forme.x_clic)
         b=forme.y_clic - a*forme.x_clic
-        dx=(forme.relache_x - forme.x_clic) / abs(forme.relache_x - forme.x_clic) * min(1,abs(1/a)) * 10
+        dx=(forme.relache_x - forme.x_clic) / abs(forme.relache_x - forme.x_clic) * min(1,abs(1/a)) * 8
         x,y=forme.x_clic,forme.y_clic
         while y>forme.relache_y:
             #print(a,b,x,y)
@@ -184,14 +203,14 @@ def bouger_formes(tour,formes):
             mouse.position=(x,y)
             sleep(0.00001)
         #print(forme.relache_x - forme.x_clic,forme.relache_y - forme.y_clic)
-        sleep(0.7)
+        sleep(0.9)
         mouse.release(Button.left)
         mouse.position = (955,1226)
 
 
 
 #sleep(1)
-#grille=lecture()
+#grille=lecture_grille()
 #print(ex_grille)
 #mouse.move(100,100)
 #formes=creer_formes(ex_grille)
@@ -206,13 +225,15 @@ def bouger_formes(tour,formes):
 # #main
 fini=False
 sleep(1)
-plateau=np.zeros((8,8))
+#plateau=np.zeros((8,8))
+plateau=lecture_plateau()
+print(plateau)
 while not fini:
-    grille=lecture()
+    grille=lecture_grille()
     print(grille)
     formes=creer_formes(grille)
     if len(formes)!=3:
-        raise "Pas 3 formes"
+        raise Exception("Pas 3 formes")
     for i in formes:
         i.affichage()
     tour=positionner(plateau,formes)
