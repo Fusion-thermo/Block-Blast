@@ -7,13 +7,18 @@ def bonne_couleur(mesure, reference, ecart_admissible):
             correct=False
     return correct
 
-
-class Carre():
-    def __init__(self,l,c,score=0,plateau=None):
+class Mouvement():
+    def __init__(self,l,c,score,plateau):
         self.l=l
         self.c=c
         self.score=score
         self.plateau=plateau
+
+class Carre():
+    def __init__(self,l,c,score=0):
+        self.l=l
+        self.c=c
+        self.score=score
 
 class Forme:
     def __init__(self,carres):
@@ -88,8 +93,10 @@ def trier_tours(tour):
     return tour.score
 
 class Tour_de_jeu():
-    def __init__(self,ordre):
+    def __init__(self,ordre,score=0,plateau=np.zeros((8,8))):
         self.ordre=ordre
         self.positions=[0,0,0]
-        self.score=0
-        self.plateau=np.zeros((8,8))
+        self.score=score
+        self.plateau=plateau
+    def affichage(self):
+        print(self.ordre,[(carre.l,carre.c,carre.score) for carre in self.positions],self.score)
