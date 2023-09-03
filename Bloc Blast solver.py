@@ -13,7 +13,6 @@ def lecture_plateau():
     x_max=1722
     y_max=1142
     im = ImageGrab.grab(bbox =(x_min,y_min,x_max,y_max))
-    #im.show()
     px=im.load()
     decalage=89
     l0=45
@@ -22,7 +21,6 @@ def lecture_plateau():
     plateau=np.zeros((8,8))
     for l in range(8):
         for c in range(8):
-        #print("x",x, x*decalage+x0+x_min)
             if not bonne_couleur(px[l*decalage + l0,c*decalage+c0],ref_fond,0.1):
                 plateau[c,l]=1
     return plateau
@@ -33,7 +31,6 @@ def lecture_grille():
     x_max=1710
     y_max=1468
     im = ImageGrab.grab(bbox =(x_min,y_min,x_max,y_max))
-    #im.show()
     px=im.load()
     decalage=41
     x0=10
@@ -41,7 +38,6 @@ def lecture_grille():
     ref_fond=(48,74,139)
     grille=np.zeros(((y_max-y_min)//41+2,(x_max-x_min)//41+2))
     while (x+1)*decalage + x0 < (x_max-x_min)-1:
-        #print("x",x, x*decalage+x0+x_min)
         x+=1
         y=0
         fond=True
@@ -57,20 +53,6 @@ def lecture_grille():
             elif not fond: #pas sur le fond mais couleur du fond = on est de nouveau sur le fond
                 break
     return grille
-
-# sleep(1)
-# grille=lecture_grille()
-# print(grille)
-# mouse.position = (10,10)
-
-ex_grille=np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
- [0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0],
- [0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0],
- [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
- [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-
 
 def creer_formes(grille):
     formes=[]
@@ -98,6 +80,27 @@ def creer_formes(grille):
                 forme.initialiser()
     return formes
 
+def compte_trous(plateau):
+    trous=[]
+    carres_possibles=[(-1,0),(0,1),(1,0),(0,-1)]
+    for ligne in range(8):
+        for colonne in range(8):
+            if plateau[ligne,colonne] == 0:
+                plateau[ligne,colonne] = 1
+                frontiere=[Carre(ligne,colonne)]
+                nombre=1
+                while len(frontiere)>0:
+                    nouveau=[]
+                    for carre in frontiere:
+                        for c_poss in carres_possibles:
+                            dl,dc=c_poss[0],c_poss[1]
+                            if carre.l+dl<8 and carre.c+dc<8 and carre.l+dl>=0 and carre.c+dc>=0 and (plateau[carre.l + dl,carre.c + dc] == 0):
+                                plateau[carre.l+dl,carre.c+dc] = 1
+                                nouveau.append(Carre(carre.l+dl,carre.c+dc))
+                                nombre+=1
+                    frontiere=nouveau[:]
+                trous.append(nombre)
+    return trous
 
 def positionner(plateau,formes):
     #pour chaque ordre possible, on parcourt les 3 numéros, et pour chauqe numéro on teste toutes les placements possibles
@@ -106,6 +109,7 @@ def positionner(plateau,formes):
     tours=[] #tous les placements possibles des 3 formes pour tous les ordres possibles
     #lorsque 2 formes sont identiques on peut diviser par 2 le nombre de possibilités
     deja_vu=[]
+    remplissage=np.count_nonzero(plateau)
     for ordre in permutations(range(3)):
         vu=False
         for permut in deja_vu:
@@ -130,80 +134,108 @@ def positionner(plateau,formes):
             forme=formes[numero]
             for tour in tours_ordre:
                 tours_case=[]
-                for l in range(plateau.shape[0] - forme.hauteur+1):
-                    for c in range(plateau.shape[1] - forme.largeur+1):
-                        plateau_test_de_case=np.copy(tour.plateau)
+                for l in range(8 - forme.hauteur+1):
+                    for c in range(8 - forme.largeur+1):
                         #vérifie si la place est prise
                         continuer=False
                         for carre in forme.carres:
-                            if plateau_test_de_case[l+carre.l,c+carre.c] == 1:
+                            if tour.plateau[l+carre.l,c+carre.c] == 1:
                                 continuer=True
                                 break
                         if continuer:
                             continue
-                        #calcule le score en fonction des voisins puis en fonction des lignes ou colonnes remplies
+                        plateau_test_de_case=np.copy(tour.plateau)
+                        #calcule le score en fonction des voisins
                         score=0
                         for carre in forme.bords:
-                            if l+carre.l == -1 or l+carre.l == plateau.shape[0] or c+carre.c == -1 or c+carre.c == plateau.shape[1]:
+                            if l+carre.l == -1 or l+carre.l == 8 or c+carre.c == -1 or c+carre.c == 8:
                                 score+=1
                             else:
                                 score+=plateau_test_de_case[l+carre.l,c+carre.c]
                         #place la pièce
                         for carre in forme.carres:
                             plateau_test_de_case[l+carre.l,c+carre.c] = 1
-                        #supprime les colonnes pleines
-                        bonus=50
-                        for col in range(plateau.shape[1]):
-                            if sum(plateau_test_de_case[line,col] for line in range(plateau.shape[0])) == plateau.shape[0]:
+                        #supprime les colonnes pleines et augmente le score
+                        bonus=30
+                        lignes,colonnes=[],[]
+                        for col in range(8):
+                            if sum(plateau_test_de_case[line,col] for line in range(8)) == 8:
                                 #print("colonne pleine")
                                 score+=bonus
-                                for line in range(plateau.shape[0]):
-                                    plateau_test_de_case[line,col]=0
-                        #supprime les lignes pleines
-                        for line in range(plateau.shape[0]):
-                            if sum(plateau_test_de_case[line,col] for col in range(plateau.shape[1])) == plateau.shape[1]:
+                                colonnes.append(col)
+                        #supprime les lignes pleines et augmente le score
+                        for line in range(8):
+                            if sum(plateau_test_de_case[line,col] for col in range(8)) == 8:
                                 #print("ligne pleine")
                                 score+=bonus
-                                for col in range(plateau.shape[1]):
-                                    plateau_test_de_case[line,col]=0
+                                lignes.append(line)
+                        for col in colonnes:
+                            for line in range(8):
+                                plateau_test_de_case[line,col]=0
+                        for line in lignes:
+                            for col in range(8):
+                                plateau_test_de_case[line,col]=0
                         #favorise le remplissage de l et c
-                        coeff=2
-                        for col in range(plateau.shape[1]):
-                            score+=sum(plateau[line,col] for line in range(plateau.shape[0])) * coeff
-                        for line in range(plateau.shape[0]):
-                            score+=sum(plateau[line,col] for col in range(plateau.shape[1])) * coeff
-                        #pénaliser la création de 0 avec 4 voisins
-                        coeff=6
+                        coeff=2 #le coeff doit être plus grand que 1 pour avoir un effet multiplicatif sur la complétion d'une l ou c
+                        for col in range(8):
+                            score+=sum(plateau[line,col] for line in range(8)) * coeff
+                            score+=sum(plateau[col,line] for line in range(8)) * coeff
+                        #pénalise la création de 0 avec 4 voisins (=1 trou de 1 carré)
+                        """ coeff=6
                         carres_possibles=[(-1,0),(0,1),(1,0),(0,-1)]
-                        for line in range(plateau.shape[0]):
-                            for col in range(plateau.shape[1]):
+                        for line in range(8):
+                            for col in range(8):
                                 if plateau_test_de_case[line,col]==0:
                                     voisins=0
                                     for carre in carres_possibles:
-                                        if carre[0]+line>=plateau.shape[0] or carre[1]+col>=plateau.shape[1] or carre[0]+line<0 or carre[1]+col<0 or (plateau_test_de_case[carre[0]+line,carre[1]+col] == 1):
+                                        if carre[0]+line>=8 or carre[1]+col>=8 or carre[0]+line<0 or carre[1]+col<0 or (plateau_test_de_case[carre[0]+line,carre[1]+col] == 1):
                                             voisins+=1
                                     if voisins>3:
-                                        score-=voisins*coeff
+                                        score-=voisins*coeff """
+
+                        #pénalise les trous
+                        coeff=2
+                        trous=compte_trous(np.copy(plateau_test_de_case))
+                        for trou in trous:
+                            score -= (len(trous)-1) * 1/trou * coeff
 
                         tour_test_de_case=Tour_de_jeu(ordre,score+tour.score,np.copy(plateau_test_de_case))
                         tour_test_de_case.positions=tour.positions[:]
                         tour_test_de_case.positions[numero] = Carre(l,c,score)
                         tours_case.append(tour_test_de_case)
-                        # tour_test=Tour_de_jeu(ordre)
-                        # tour_test.
-                        # tours_ordre.append()
                 if len(tours_case)==0:
                     #pas possible de placer ce bloc
                     continue
+                plateau_vu=[]
                 score_vu=[]
-                for score in tours_case:
+                for tour_case in tours_case:
                     #pour réduire le nombre de situations à tenter on supprime les opérations qui donnent le même résultat
-                    #normalement même résultat = même plateau donc on devrait trier avec le plateau mais puisque le résultat est choisi
-                    #au score on peut aussi le faire au score
-                    if score.score not in score_vu:
-                        tours_numero.append(score)
-                        score_vu.append(score.score)
-                #print(plateau)
+                    #il ne faut pas le faire au score car 2 plateaux différents peuvent avoir le même score
+                    #visiblement cela ne sert à rien
+                    
+                    #faire toutes les possibilités est trop lent et inutile s'il y a peu de cases
+                    if remplissage>15:
+                        passer=False
+                        for vu in plateau_vu:
+                            if (tour_case.plateau == vu).all():
+                                passer=True
+                                break
+                        if not passer:
+                            tours_numero.append(tour_case)
+                            plateau_vu.append(np.copy(tour_case.plateau))
+                        else:
+                            print("égalité")
+                        #tours_numero.append(tour_case)
+                    else:
+                        passer=False
+                        for vu in score_vu:
+                            if vu==tour_case.score:
+                                passer=True
+                                break
+                        if not passer:
+                            tours_numero.append(tour_case)
+                            score_vu.append(tour_case.score)
+
             if len(tours_numero)==0:
                 print("impossible")
                 possible=False
@@ -216,8 +248,6 @@ def positionner(plateau,formes):
     if len(tours) > 0:
         tours.sort(reverse=True,key=trier_tours)
         print("{} plateaux possibles".format(len(tours)))
-        #for i in tours:
-        #    i.affichage()
         return tours[0]
     else:
         return "Perdu"
@@ -236,37 +266,18 @@ def bouger_formes(tour,formes):
         sleep(0.3)
         mouse.press(Button.left)
         sleep(0.5)
-        #mouse.position = (forme.relache_x,forme.relache_y)
-        #mouse.move(forme.relache_x - forme.x_clic,forme.relache_y - forme.y_clic)
         a=(forme.relache_y - forme.y_clic) / (forme.relache_x - forme.x_clic)
         b=forme.y_clic - a*forme.x_clic
         dx=(forme.relache_x - forme.x_clic) / abs(forme.relache_x - forme.x_clic) * min(1,abs(1/a)) * 8
         x,y=forme.x_clic,forme.y_clic
         while y>forme.relache_y:
-            #print(a,b,x,y)
             x+=dx
             y=a*x+b
             mouse.position=(x,y)
             sleep(0.00001)
-        #print(forme.relache_x - forme.x_clic,forme.relache_y - forme.y_clic)
-        sleep(0.9)
+        sleep(0.6)
         mouse.release(Button.left)
         mouse.position = (955,1226)
-
-
-
-#sleep(1)
-#grille=lecture_grille()
-#print(ex_grille)
-#mouse.move(100,100)
-#formes=creer_formes(ex_grille)
-#for i in formes:
-#    i.affichage()
-
-# plateau=np.zeros((8,8))
-# tour=positionner(plateau,formes)
-# print(tour.ordre,tour.plateau)
-# bouger_formes(tour,formes)
 
 # #main
 fini=False
@@ -289,6 +300,6 @@ while not fini:
     else:
         print("ordre choisi",tour.ordre)
         plateau=np.copy(tour.plateau)
-        print("plateau\n",plateau)
+        print(plateau)
         bouger_formes(tour,formes)
         sleep(2)
