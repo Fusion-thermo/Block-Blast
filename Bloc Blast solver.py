@@ -124,7 +124,7 @@ def positionner(plateau,formes):
         if vu:
             continue
         deja_vu.append(ordre)
-        print(ordre)
+        #print(ordre)
         tour_actuel=Tour_de_jeu(ordre)
         tour_actuel.plateau=np.copy(plateau_original)
         possible=True
@@ -180,18 +180,18 @@ def positionner(plateau,formes):
                         for col in range(8):
                             score+=sum(plateau[line,col] for line in range(8)) * coeff
                             score+=sum(plateau[col,line] for line in range(8)) * coeff
-                        #pénalise la création de 0 avec 4 voisins (=1 trou de 1 carré)
-                        """ coeff=6
+                        #pénalise la création de blocs de 1 carré
+                        coeff=6
                         carres_possibles=[(-1,0),(0,1),(1,0),(0,-1)]
                         for line in range(8):
                             for col in range(8):
-                                if plateau_test_de_case[line,col]==0:
+                                if plateau_test_de_case[line,col]==1:
                                     voisins=0
                                     for carre in carres_possibles:
-                                        if carre[0]+line>=8 or carre[1]+col>=8 or carre[0]+line<0 or carre[1]+col<0 or (plateau_test_de_case[carre[0]+line,carre[1]+col] == 1):
+                                        if carre[0]+line>=8 or carre[1]+col>=8 or carre[0]+line<0 or carre[1]+col<0 or (plateau_test_de_case[carre[0]+line,carre[1]+col] == 0):
                                             voisins+=1
                                     if voisins>3:
-                                        score-=voisins*coeff """
+                                        score-=voisins*coeff
 
                         #pénalise les trous
                         coeff=2
@@ -211,22 +211,23 @@ def positionner(plateau,formes):
                 for tour_case in tours_case:
                     #pour réduire le nombre de situations à tenter on supprime les opérations qui donnent le même résultat
                     #il ne faut pas le faire au score car 2 plateaux différents peuvent avoir le même score
-                    #visiblement cela ne sert à rien
                     
                     #faire toutes les possibilités est trop lent et inutile s'il y a peu de cases
                     if remplissage>15:
-                        passer=False
-                        for vu in plateau_vu:
-                            if (tour_case.plateau == vu).all():
-                                passer=True
-                                break
-                        if not passer:
-                            tours_numero.append(tour_case)
-                            plateau_vu.append(np.copy(tour_case.plateau))
-                        else:
-                            print("égalité")
-                        #tours_numero.append(tour_case)
+                        #visiblement cela ne sert à rien
+                        # passer=False
+                        # for vu in plateau_vu:
+                        #     if (tour_case.plateau == vu).all():
+                        #         passer=True
+                        #         break
+                        # if not passer:
+                        #     tours_numero.append(tour_case)
+                        #     plateau_vu.append(np.copy(tour_case.plateau))
+                        # else:
+                        #     print("égalité")
+                        tours_numero.append(tour_case)
                     else:
+                        #ici on le fait au score car lorsqu'il y a peu de cases c'est trop long de tester toutes les possibilités
                         passer=False
                         for vu in score_vu:
                             if vu==tour_case.score:
@@ -263,19 +264,19 @@ def bouger_formes(tour,formes):
         forme.relache_x = (x0 + tour.positions[numero].c * decalage) + forme.largeur*decalage//2 + 35
         forme.relache_y = (y0 + tour.positions[numero].l * decalage) + forme.hauteur*decalage//2 + ecart_vertical +10
         mouse.position = (forme.x_clic,forme.y_clic)
-        sleep(0.3)
+        sleep(0.4)
         mouse.press(Button.left)
         sleep(0.5)
         a=(forme.relache_y - forme.y_clic) / (forme.relache_x - forme.x_clic)
         b=forme.y_clic - a*forme.x_clic
-        dx=(forme.relache_x - forme.x_clic) / abs(forme.relache_x - forme.x_clic) * min(1,abs(1/a)) * 8
+        dx=(forme.relache_x - forme.x_clic) / abs(forme.relache_x - forme.x_clic) * min(1,abs(1/a)) * 12
         x,y=forme.x_clic,forme.y_clic
         while y>forme.relache_y:
             x+=dx
             y=a*x+b
             mouse.position=(x,y)
             sleep(0.00001)
-        sleep(0.6)
+        sleep(0.5)
         mouse.release(Button.left)
         mouse.position = (955,1226)
 
@@ -284,10 +285,10 @@ fini=False
 sleep(1)
 #plateau=np.zeros((8,8))
 plateau=lecture_plateau()
-print(plateau)
+#print(plateau)
 while not fini:
     grille=lecture_grille()
-    print(grille)
+    #print(grille)
     formes=creer_formes(grille)
     if len(formes)!=3:
         raise Exception("Pas 3 formes")
@@ -298,8 +299,8 @@ while not fini:
         print('Aucune solution possible')
         fini=True
     else:
-        print("ordre choisi",tour.ordre)
+        #print("ordre choisi",tour.ordre)
         plateau=np.copy(tour.plateau)
         print(plateau)
         bouger_formes(tour,formes)
-        sleep(2)
+        sleep(1)
