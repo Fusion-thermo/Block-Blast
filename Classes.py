@@ -7,13 +7,6 @@ def bonne_couleur(mesure, reference, ecart_admissible):
             correct=False
     return correct
 
-class Mouvement():
-    def __init__(self,l,c,score,plateau):
-        self.l=l
-        self.c=c
-        self.score=score
-        self.plateau=plateau
-
 class Carre():
     def __init__(self,l,c,score=0):
         self.l=l
@@ -32,7 +25,6 @@ class Forme:
         self.y_relache=0
     def initialiser(self):
         #définit le pixel où cliquer pour déplacer la forme
-        #en colonnes : le milieu de la forme
         #lorsqu'on clique sur une forme, le centre (à la fois l et c) se déplace de la ligne centrale invisible des 3 formes à la bordure basse de l'écran
         #ligne invisible en y=1355, la bordure du bas (qui correspond au centre de la pièce) et est en 1145
         #donc lorsqu'on clique au centre de la forme le centre de la nouvelle pièce se situe 210 pixels plus haut

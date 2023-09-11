@@ -283,12 +283,9 @@ def bouger_formes(tour,formes):
 # #main
 fini=False
 sleep(1)
-#plateau=np.zeros((8,8))
 plateau=lecture_plateau()
-#print(plateau)
 while not fini:
     grille=lecture_grille()
-    #print(grille)
     formes=creer_formes(grille)
     if len(formes)!=3:
         raise Exception("Pas 3 formes")
@@ -299,7 +296,6 @@ while not fini:
         print('Aucune solution possible')
         fini=True
     else:
-        #print("ordre choisi",tour.ordre)
         plateau=np.copy(tour.plateau)
         print(plateau)
         bouger_formes(tour,formes)
