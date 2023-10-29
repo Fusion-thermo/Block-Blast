@@ -1,6 +1,6 @@
 # Block Blast
  
-Objectis :
+Objectifs :
 
 - Essayer de survivre le plus longtemps possible
 - Y a-t-il une stratégie qui permet de ne jamais perdre ?
