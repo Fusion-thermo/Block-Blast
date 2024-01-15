@@ -214,7 +214,8 @@ def positionner(plateau,formes):
                     
                     #faire toutes les possibilités est trop lent et inutile s'il y a peu de cases
                     if remplissage>15:
-                        #visiblement cela ne sert à rien
+                        # supprime les situations dont le plateau est final est le même
+                        # visiblement cela ne sert à rien
                         # passer=False
                         # for vu in plateau_vu:
                         #     if (tour_case.plateau == vu).all():
