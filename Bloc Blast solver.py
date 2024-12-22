@@ -14,10 +14,10 @@ def lecture_plateau():
     y_max=1142
     im = ImageGrab.grab(bbox =(x_min,y_min,x_max,y_max))
     px=im.load()
-    decalage=89
-    l0=45
-    c0=45
-    ref_fond=(35,45,85)
+    decalage=89 #distance between 2 empty blocks of the grid
+    l0=45 # ~ decalage//2
+    c0=45 # ~ decalage//2
+    ref_fond=(35,45,85) #rgb value of background pixels of the grid
     plateau=np.zeros((8,8))
     for l in range(8):
         for c in range(8):
@@ -32,11 +32,11 @@ def lecture_grille():
     y_max=1468
     im = ImageGrab.grab(bbox =(x_min,y_min,x_max,y_max))
     px=im.load()
-    decalage=41
-    x0=10
+    decalage=41 #distance between two blocks
+    x0=10 #can be adapted to the screen dimensions
     x=-1
     ref_fond=(48,74,139)
-    grille=np.zeros(((y_max-y_min)//41+2,(x_max-x_min)//41+2))
+    grille=np.zeros(((y_max-y_min)//decalage+2,(x_max-x_min)//decalage+2)) #the 2 may be changed for fine tuning of pixels
     while (x+1)*decalage + x0 < (x_max-x_min)-1:
         x+=1
         y=0
@@ -214,7 +214,7 @@ def positionner(plateau,formes):
                     
                     #faire toutes les possibilités est trop lent et inutile s'il y a peu de cases
                     if remplissage>15:
-                        # supprime les situations dont le plateau est final est le même
+                        # supprime les situations dont le plateau final est le même
                         # visiblement cela ne sert à rien
                         # passer=False
                         # for vu in plateau_vu:
@@ -256,21 +256,21 @@ def positionner(plateau,formes):
 
 
 def bouger_formes(tour,formes):
-    #calculer où lâcher la forme
-    decalage=89
-    x0, y0=1015,435
-    ecart_vertical=210
+    #calcule où lâcher la forme : does not work anymore, there has been an update of the game, the distance between the pointer and the position of the moving piece is not identical anymore (distance increases with vertical position)
+    decalage=89 #distance between 2 empty blocks of the grid
+    x0, y0=1015,435 #same as x_min and y_min of lecture_plateau()
+    ecart_vertical=210 #maybe the change in position of the shape when clicking on it, which gives a hovering effect above the board
     for numero in tour.ordre:
         forme=formes[numero]
-        forme.relache_x = (x0 + tour.positions[numero].c * decalage) + forme.largeur*decalage//2 + 35
-        forme.relache_y = (y0 + tour.positions[numero].l * decalage) + forme.hauteur*decalage//2 + ecart_vertical +10
+        forme.relache_x = (x0 + tour.positions[numero].c * decalage) + forme.largeur*decalage//2 + 35 #35 could be adjusted
+        forme.relache_y = (y0 + tour.positions[numero].l * decalage) + forme.hauteur*decalage//2 + ecart_vertical +10 #10 could be adjusted
         mouse.position = (forme.x_clic,forme.y_clic)
         sleep(0.4)
         mouse.press(Button.left)
         sleep(0.5)
         a=(forme.relache_y - forme.y_clic) / (forme.relache_x - forme.x_clic)
         b=forme.y_clic - a*forme.x_clic
-        dx=(forme.relache_x - forme.x_clic) / abs(forme.relache_x - forme.x_clic) * min(1,abs(1/a)) * 12
+        dx=(forme.relache_x - forme.x_clic) / abs(forme.relache_x - forme.x_clic) * min(1,abs(1/a)) * 12 #12 ?
         x,y=forme.x_clic,forme.y_clic
         while y>forme.relache_y:
             x+=dx
@@ -279,17 +279,17 @@ def bouger_formes(tour,formes):
             sleep(0.00001)
         sleep(0.5)
         mouse.release(Button.left)
-        mouse.position = (955,1226)
+        mouse.position = (955,1226) #anywhere outside the screen as to not have an effect on the reading of the screen
 
 # #main
 fini=False
-sleep(1)
+sleep(1) #defines the time in seconds between running the screen and the time it will start reading the screen
 plateau=lecture_plateau()
 while not fini:
     grille=lecture_grille()
     formes=creer_formes(grille)
     if len(formes)!=3:
-        raise Exception("Pas 3 formes")
+        raise Exception(f"{len(formes)}/3 proposed blocks detected")
     for i in formes:
         i.affichage()
     tour=positionner(plateau,formes)
